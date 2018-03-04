@@ -42,7 +42,7 @@ for i in range(len(line)*8):
             i1=i%len(line)
         pos[i].append(float(line[i1][j]))
 #向三个方向扩展
-for i in range(4):
+for i in range(len(line)):
     pos[len(line) + i][0] = pos[len(line) + i][0] + 1
     pos[len(line)*2 + i][1] = pos[len(line)*2 + i][1] + 1
     pos[len(line)*3 + i][2] = pos[len(line)*3 + i][2] + 1
@@ -109,4 +109,6 @@ p=sympy.Symbol('p')
 p=abs(float(sympy.solve([(p*int(listDict.get(max(listDict))[0]))**2+(p*int(listDict.get(max(listDict))[1]))**2+(p*int(listDict.get(max(listDict))[2]))**2-float(max(listDict))**2],[p])[0][0]))
 distanceA=((p*int(listDict.get(max(listDict))[0])*float(x))**2.0+(p*int(listDict.get(max(listDict))[1])*float(y))**2.0+(p*int(listDict.get(max(listDict))[2])*float(z))**2.0)**0.5
 
+#cut
+MaxHkl=list(listDict.get(max(listDict)))
 
