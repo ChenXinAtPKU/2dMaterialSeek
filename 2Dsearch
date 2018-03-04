@@ -1,0 +1,112 @@
+import re
+import sympy
+import math
+
+#读取文件
+txt = open('POSCAR', 'r')
+content = txt.read()
+
+# 读取晶格常数
+matchp = re.match(r'(.*)\n(.*)\n(.*)\n(.*)\n(.*)', content)
+print(matchp.group())
+xLat = matchp.group(3)
+x = re.split(' ', xLat)[0]
+yLat = matchp.group(4)
+y = re.split(' ', yLat)[1]
+zLat = matchp.group(5)
+z = re.split(' ', zLat)[2]
+
+txt.close()
+txt = open('POSCAR', 'r')
+
+# 读取原子位置
+line = []
+for i in range(8):
+    txt.readline()
+while 1:
+    posLine = txt.readline()
+    if not posLine:
+        break
+    line.append(re.split(' ', posLine))
+txt.close()
+
+# 输出位置信息
+pos = []
+for i in range(len(line)*8):
+    pos.append([])
+
+#duplicate position sites
+    for j in range(3):
+        i1=i
+        if i>=len(line):
+            i1=i%len(line)
+        pos[i].append(float(line[i1][j]))
+#向三个方向扩展
+for i in range(4):
+    pos[len(line) + i][0] = pos[len(line) + i][0] + 1
+    pos[len(line)*2 + i][1] = pos[len(line)*2 + i][1] + 1
+    pos[len(line)*3 + i][2] = pos[len(line)*3 + i][2] + 1
+    pos[len(line)*4 + i][0] = pos[len(line)*4 + i][0] + 1
+    pos[len(line) * 4 + i][1] = pos[len(line) * 4 + i][1] + 1
+    pos[len(line) * 5 + i][0] = pos[len(line) * 5 + i][0] + 1
+    pos[len(line) * 5 + i][2] = pos[len(line) * 5 + i][2] + 1
+    pos[len(line) * 6 + i][1] = pos[len(line) * 6 + i][1] + 1
+    pos[len(line) * 6 + i][2] = pos[len(line) * 6 + i][2] + 1
+    pos[len(line) * 7 + i][0] = pos[len(line) * 7 + i][0] + 1
+    pos[len(line) * 7 + i][1] = pos[len(line) * 7 + i][1] + 1
+    pos[len(line) * 7 + i][2] = pos[len(line) * 7 + i][2] + 1
+position = pos
+
+#点投影到直线上
+def reflect(h,k,l,position):
+    linePosition=[]
+    a = sympy.Symbol('a')
+    b = sympy.Symbol('b')
+    c = sympy.Symbol('c')
+    for i in range(len(position)):
+        x = position[i][0]
+        y = position[i][1]
+        z = position[i][2]
+        if (k * c - l * b)==0 and (k * c - l * b)==0 and ( h * c - a * l ) == 0 :
+            linePos={a:x,b:y,c:z}
+            linePosition.append(linePos)
+            break
+        linePos = sympy.solve([h*b-a*k, k*c-b*l, h*c-l*a, (x - a) * h + (y - b) * k + (z - c) * l],[a, b, c])
+        siteAtLine=(linePos[a]**2+linePos[b]**2+linePos[c]**2)**0.5
+        linePosition.append(siteAtLine)
+    linePosition.sort()
+#线上点与点的距离计算
+    distance=[]
+    for i in range(len(linePosition)-1):
+        Dis=linePosition[i+1]-linePosition[i]
+        distance.append(Dis)
+    MaxDistance=max(distance)
+    return MaxDistance;
+list1=[]
+hklMaxDistance=[]
+
+#寻找最大层间距
+for h in range(3):
+    h=2-h
+    for k in range(3):
+        k=2-k
+        for l in range(3):
+            l=2-l
+            if h==k==l and h!=1:
+                break
+            chuanzhi=reflect(h,k,l,position)
+            hklMaxDistance.append(chuanzhi)
+            list1.append((str(chuanzhi),str(h)+str(k)+str(l)))
+listDict=dict(list1)
+new=open('newtxt.txt','w')
+new.write(str(listDict))
+#找到其晶面指数
+print(listDict.get(max(listDict)))
+
+
+#求最大层间距，单位为A
+p=sympy.Symbol('p')
+p=abs(float(sympy.solve([(p*int(listDict.get(max(listDict))[0]))**2+(p*int(listDict.get(max(listDict))[1]))**2+(p*int(listDict.get(max(listDict))[2]))**2-float(max(listDict))**2],[p])[0][0]))
+distanceA=((p*float(x))**2.0+(p*float(y))**2.0+(p*float(z))**2.0)**0.5
+
+
