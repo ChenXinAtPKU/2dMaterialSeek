@@ -66,7 +66,10 @@ def reflect(h,k,l,position):
         y = position[i][1]
         z = position[i][2]
         linePos = sympy.solve([h*b-a*k, k*c-b*l, h*c-l*a, (x - a) * h + (y - b) * k + (z - c) * l],[a, b, c])
-        siteAtLine=(linePos[a]**2+linePos[b]**2+linePos[c]**2)**0.5
+        if linePos[a]<0 or linePos[b]<0 or linePos[c]<0:
+            siteAtLine = -(linePos[a] ** 2 + linePos[b] ** 2 + linePos[c] ** 2) ** 0.5
+        else:
+            siteAtLine=(linePos[a]**2+linePos[b]**2+linePos[c]**2)**0.5
         linePosition.append(siteAtLine)
     linePosition.sort()
 #线上点与点的距离计算
@@ -118,7 +121,10 @@ for i in range(len(position)):
     y = position[i][1]
     z = position[i][2]
     linePos = sympy.solve([MaxHkl[0] * b - a * MaxHkl[1], MaxHkl[1] * c - b * MaxHkl[2], MaxHkl[0] * c - MaxHkl[2] * a, (x - a) * MaxHkl[0] + (y - b) * MaxHkl[1] + (z - c) * MaxHkl[2]], [a, b, c])
-    siteAtLine = (linePos[a] ** 2 + linePos[b] ** 2 + linePos[c] ** 2) ** 0.5
+    if linePos[a] < 0 or linePos[b] < 0 or linePos[c] < 0:
+        siteAtLine = -(linePos[a] ** 2 + linePos[b] ** 2 + linePos[c] ** 2) ** 0.5
+    else:
+        siteAtLine = (linePos[a] ** 2 + linePos[b] ** 2 + linePos[c] ** 2) ** 0.5
     linePosition.append(siteAtLine)
     pointData[i].append(siteAtLine)
     pointData[i].append(linePos)
@@ -127,11 +133,11 @@ for i in range(len(position)):
     #from small to big
 distance=[]
 #寻找切割起始位置
-
+pointData.sort()
 point0 = 0
 for i in range(len(pointData)-1):
     Dis=pointData[i+1][0]-pointData[i][0]
-    if Dis==float(max(listDict)):
+    if Dis-float(max(listDict))<0.0001:
         point0=i+1
         break
 
@@ -146,3 +152,7 @@ for i in range(len(pointData)-1):
 for i in range(len(modifiedPointData)):
     del modifiedPointData[i][1]
     del modifiedPointData[i][0]
+
+
+
+
