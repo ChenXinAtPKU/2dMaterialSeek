@@ -3,7 +3,7 @@ import sympy
 import math
 
 #读取文件
-txt = open('POSCAR.mp-568286_C', 'r')
+txt = open('POSCAR', 'r')
 content = txt.read()
 
 # 读取晶格常数
@@ -17,7 +17,7 @@ zLat = matchp.group(5)
 z = re.split(' ', zLat)[2]
 
 txt.close()
-txt = open('POSCAR.mp-568286_C', 'r')
+txt = open('POSCAR', 'r')
 
 # 读取原子位置
 line = []
@@ -82,12 +82,12 @@ list1=[]
 hklMaxDistance=[]
 
 #寻找最大层间距
-for h in range(3):
-    h=2-h
-    for k in range(3):
-        k=2-k
-        for l in range(3):
-            l=2-l
+for h in range(2):
+    h=1-h
+    for k in range(2):
+        k=1-k
+        for l in range(2):
+            l=1-l
             if h==k==l and h!=1:
                 continue
             chuanzhi=reflect(h,k,l,position)
@@ -122,8 +122,10 @@ for i in range(len(position)):
     linePos = sympy.solve([MaxHkl[0] * b - a * MaxHkl[1], MaxHkl[1] * c - b * MaxHkl[2], MaxHkl[0] * c - MaxHkl[2] * a, (x - a) * MaxHkl[0] + (y - b) * MaxHkl[1] + (z - c) * MaxHkl[2]], [a, b, c])
     siteAtLine = (linePos[a] ** 2 + linePos[b] ** 2 + linePos[c] ** 2) ** 0.5
     linePosition.append(siteAtLine)
-    pointData[i].append([x,y,z]);pointData[i].append(linePos);pointData[i].append(siteAtLine)
-    #pointData[I][0]是原始位置信息，pointData[I][1]是线上位置信息，pointData[I][2]是线上位置至原点距离
+    pointData[i].append(siteAtLine)
+    pointData[i].append(linePos)
+    pointData[i].append([x,y,z])
+    #pointData[I][0]是线上位置至原点距离，pointData[I][1]是线上位置信息，pointData[I][2]是原始位置信息
     #from small to big
     pointData.sort()
 distance=[]
@@ -131,29 +133,19 @@ distance=[]
 
 point0 = 0
 for i in range(len(pointData)-1):
-    if point0==0:
-        Dis=pointData[i+1][2]-pointData[i][2]
-        if Dis==max(listDict):
-            point0=i+1
-            break
+    Dis=pointData[i+1][0]-pointData[i][0]
+    if Dis==float(max(listDict)):
+        point0=i+1
+        break
 
 #从起始位置切割并建立新的poscar
 modifiedPointData=[]
+iftrue=1
 for i in range(len(pointData)-1):
-    if i>=point0 :
-        if pointData[i+1][2]-pointData[i][2]== max(listDict):
-            break
+    if i>=point0 and iftrue==1:
+        if abs(pointData[i+1][0]-pointData[i][0]-float(max(listDict)))<0.0001:
+            iftrue=0
         modifiedPointData.append(pointData[i])
-
-
-
-
-
-
-
-
-
-
-
-
-
+for i in range(len(modifiedPointData)):
+    del modifiedPointData[i][1]
+    del modifiedPointData[i][0]
