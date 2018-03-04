@@ -32,7 +32,7 @@ txt.close()
 
 # 输出位置信息
 pos = []
-for i in range(len(line)*8):
+for i in range(len(line)*27):
     pos.append([])
 
 #duplicate position sites
@@ -42,19 +42,17 @@ for i in range(len(line)*8):
             i1=i%len(line)
         pos[i].append(float(line[i1][j]))
 #向三个方向扩展
-for i in range(len(line)):
-    pos[len(line) + i][0] = pos[len(line) + i][0] + 1
-    pos[len(line)*2 + i][1] = pos[len(line)*2 + i][1] + 1
-    pos[len(line)*3 + i][2] = pos[len(line)*3 + i][2] + 1
-    pos[len(line)*4 + i][0] = pos[len(line)*4 + i][0] + 1
-    pos[len(line) * 4 + i][1] = pos[len(line) * 4 + i][1] + 1
-    pos[len(line) * 5 + i][0] = pos[len(line) * 5 + i][0] + 1
-    pos[len(line) * 5 + i][2] = pos[len(line) * 5 + i][2] + 1
-    pos[len(line) * 6 + i][1] = pos[len(line) * 6 + i][1] + 1
-    pos[len(line) * 6 + i][2] = pos[len(line) * 6 + i][2] + 1
-    pos[len(line) * 7 + i][0] = pos[len(line) * 7 + i][0] + 1
-    pos[len(line) * 7 + i][1] = pos[len(line) * 7 + i][1] + 1
-    pos[len(line) * 7 + i][2] = pos[len(line) * 7 + i][2] + 1
+iii=0
+for i in [0,1,-1]:
+    for o in [0,1,-1]:
+        for p in [0,1,-1]:
+            for oo in range(len(line)):
+                pos[len(line)*iii + oo][0] = pos[len(line)*iii +oo][0]+i
+                pos[len(line) * iii + oo][1] = pos[len(line) * iii + oo][1] + o
+                pos[len(line) * iii + oo][2] = pos[len(line) * iii + oo][2] + p
+            iii=1+iii
+
+
 position = pos
 
 #点投影到直线上
@@ -127,7 +125,6 @@ for i in range(len(position)):
     pointData[i].append([x,y,z])
     #pointData[I][0]是线上位置至原点距离，pointData[I][1]是线上位置信息，pointData[I][2]是原始位置信息
     #from small to big
-    pointData.sort()
 distance=[]
 #寻找切割起始位置
 
