@@ -3,7 +3,7 @@ import sympy
 import math
 
 #读取文件
-txt = open('POSCAR', 'r')
+txt = open('POSCAR.mp-568286_C', 'r')
 content = txt.read()
 
 # 读取晶格常数
@@ -17,7 +17,7 @@ zLat = matchp.group(5)
 z = re.split(' ', zLat)[2]
 
 txt.close()
-txt = open('POSCAR', 'r')
+txt = open('POSCAR.mp-568286_C', 'r')
 
 # 读取原子位置
 line = []
@@ -107,6 +107,6 @@ print(listDict.get(max(listDict)))
 #求最大层间距，单位为A
 p=sympy.Symbol('p')
 p=abs(float(sympy.solve([(p*int(listDict.get(max(listDict))[0]))**2+(p*int(listDict.get(max(listDict))[1]))**2+(p*int(listDict.get(max(listDict))[2]))**2-float(max(listDict))**2],[p])[0][0]))
-distanceA=((p*float(x))**2.0+(p*float(y))**2.0+(p*float(z))**2.0)**0.5
+distanceA=((p*int(listDict.get(max(listDict))[0])*float(x))**2.0+(p*int(listDict.get(max(listDict))[1])*float(y))**2.0+(p*int(listDict.get(max(listDict))[2])*float(z))**2.0)**0.5
 
 
