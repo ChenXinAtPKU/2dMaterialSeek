@@ -1,6 +1,8 @@
 import re
 import sympy
 import math
+#尚存疑问：1，切割起始位置是否会造成所获得2D切片只含有一个原子的状况
+
 
 #读取文件
 txt = open('POSCAR', 'r')
