@@ -142,8 +142,9 @@ for filename in everyfile:
         # 线上点与点的距离计算
         distance = []
         for i in range(len(linePosition) - 1):
-            Dis = linePosition[i + 1] - linePosition[i]
-            distance.append(Dis)
+            if 0<linePosition[i]<(realh**2+realk**2+reall**2)**0.5:
+                Dis = linePosition[i + 1] - linePosition[i]
+                distance.append(Dis)
         MaxDistance = max(distance)
         return MaxDistance;
 
