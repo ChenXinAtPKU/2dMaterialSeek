@@ -117,9 +117,9 @@ for filename in everyfile:
     list1=[]
     pos=tuple(pos)
     posreal=tuple(posreal)
-    for hh in [5,4,3,2,1]:  # 此时的hkl非原坐标系的hkl，这点需要得到注意
-        for kk in [5,4,3,2,1]:
-            for ll in [5,4,3,2,1]:
+    for hh in [5,4,3,2,1,0]:  # 此时的hkl非原坐标系的hkl，这点需要得到注意
+        for kk in [5,4,3,2,1,0]:
+            for ll in [5,4,3,2,1,0]:
 
                 h=hh
                 k=kk
@@ -609,7 +609,7 @@ for filename in everyfile:
         else:
             anotherZ = sympy.solve([a * h + b * k + c * l, c - 1, a + b], [a, b, c])
         anotherZlist = [float(anotherZ[a]), float(anotherZ[b]), float(anotherZ[c])]
-        anotherXlist = [-k, h, 0]
+        anotherXlist = [1, -float(h)/float(k), 0]
         newCoordinateMat = np.mat([[anotherXlist[0] * x1 + anotherXlist[1] * y1,
                                     anotherXlist[0] * x2 + anotherXlist[1] * y2,
                                     anotherXlist[0] * x3 + anotherXlist[1] * y3], [y1, y2, y3],
