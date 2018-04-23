@@ -1,0 +1,362 @@
+#!/usr/local/bin python2
+# by cx
+import os
+import re
+import sympy
+import numpy as np
+import shutil
+import math
+import spglib
+
+
+
+allbond = open('/udata/cczhang/chenx/highthroughoutput/2Dcut/planb/allBond', 'r')
+#newfilepath = '/udata/cczhang/chenx/highthroughoutput/2Dcut/planb/out'
+allbonddata = []
+while 1:
+    bondreadline = allbond.readline()
+    bondreadline = re.sub('\n', '', bondreadline)
+    allbonddata.append(re.split('\t', bondreadline))
+    if not bondreadline:
+        break
+
+
+#def as_num(numberx):
+    #numbery = '{:.5f}'.format(numberx)
+    #return numbery
+
+def contain(pos,posset):
+    for j in posset:
+        if (abs(pos[0] - j[0]) < 0.03 or abs(pos[0] - j[0]) > 0.97)  and (abs(pos[1] - j[1]) < 0.03 or abs(pos[1] - j[1]) > 0.97)  and (abs(pos[2] - j[2]) < 0.03 or abs(pos[2] - j[2]) > 0.97) :
+            return True
+    return False
+
+def getDistance(position1, position2):      #define the function to determine wether two atom form a bond
+    dis = ((position1[0] - position2[0]) ** 2 + (position1[1] - position2[1]) ** 2 + (
+            position1[2] - position2[2]) ** 2) ** 0.5
+    if dis>4.8:                            # to reduce compute hours
+        return False
+    for i1 in range(len(allbonddata) - 1):
+        if ((position1[3] == allbonddata[i1][0]) and (position2[3] == allbonddata[i1][1])) or (
+                (position2[3] == allbonddata[i1][0]) and (position1[3] == allbonddata[i1][1])):
+            juli = float(allbonddata[i1][2]) * 1.00001
+            break
+
+        else:                              #if there is not data about this two atoms given , we set the smllest bond is 0.0001
+            juli = 0.0001
+
+    return dis <= juli
+
+
+canzhaoexcel = open('/udata/cczhang/chenx/highthroughoutput/2Dcut/planb/outdata1', 'r')
+exceldata = canzhaoexcel.read()
+exceldatalist = re.split('\n', exceldata)
+exceldatalist.pop()
+
+
+newexcel = open('/udata/cczhang/chenx/highthroughoutput/2Dcut/planb/outdatapland', 'w')
+#filepath='//udata//cczhang/chenx/highthroughoutput//2Dcut//planb//out'
+#pathDir =  os.listdir(filepath)
+#everyfile =[]
+#for allDir in pathDir:
+    #everyfile.append(os.path.join('%s//%s' % (filepath, allDir)))
+
+
+for filename in exceldatalist:
+    #-------------------------------------------getting information from POSCAR----------------------------------------------------------#
+    filename=re.sub('\r','',filename)
+    txt = open(filename, 'r')
+    content = txt.read()
+    for i in range(10):
+        content = re.sub('  ', ' ', content)
+        content = re.sub('\n ', '\n', content)
+    matchp = re.match(r'(.*)\n(.*)\n(.*)\n(.*)\n(.*)', content)
+    print(matchp.group())
+    cryname = matchp.group(1)
+    magnification = float(matchp.group(2))
+    xLat = matchp.group(3)
+    x1 = float(re.split(' ', xLat)[0]) * 3                  #duplicat the cell, so that the lattice should also be duplicated
+    x2 = float(re.split(' ', xLat)[1]) * 3
+    x3 = float(re.split(' ', xLat)[2]) * 3
+    realx1 = float(x1);
+    realx2 = float(x2);
+    realx3 = float(x3)
+    yLat = matchp.group(4)
+    y1 = float(re.split(' ', yLat)[0]) * 3
+    y2 = float(re.split(' ', yLat)[1]) * 3
+    y3 = float(re.split(' ', yLat)[2]) * 3
+    realy1 = float(y1);
+    realy2 = float(y2);
+    realy3 = float(y3)
+    zLat = matchp.group(5)
+    z1 = float(re.split(' ', zLat)[0]) * 3
+    z2 = float(re.split(' ', zLat)[1]) * 3
+    z3 = float(re.split(' ', zLat)[2]) * 3
+    realz1 = float(z1);
+    realz2 = float(z2);
+    realz3 = float(z3)
+    txt.close()
+    #-------------------------------------------getting information from POSCAR----------------------------------------------------------#
+    #-------------------------------------------getting information from POSCAR----------------------------------------------------------#
+    txt = open(filename, 'r')
+    line = []
+    for i in range(8):
+        txt.readline()
+    while 1:
+        posLine = txt.readline()
+        for i in range(10):
+            posLine = re.sub('  ', ' ', posLine)
+            posLine = posLine.lstrip()
+        if not posLine:
+            break
+        line.append(re.split(' ', posLine))
+    txt.close()
+    #-------------------------------------------getting information from POSCAR----------------------------------------------------------#
+
+
+    txt = open(filename, 'r')
+    for i in range(5):
+        txt.readline()
+    typenumber = []
+    for j1 in range(2):
+        posLine = txt.readline()
+        for j2 in range(10):
+            posLine = re.sub('  ', ' ', posLine)
+            posLine = posLine.lstrip()
+            posLine = re.sub('\n', '', posLine)
+        typenumberguodu = re.split(' ', posLine)
+        for i2 in typenumberguodu:
+            if i2 == '':
+                typenumberguodu.remove('')
+            if i2 == ' ':
+                typenumberguodu.remove(' ')
+        typenumber.append(typenumberguodu)
+    xuhao2 = 0
+    for i in range(len(typenumber[0])):
+        for j1 in range(int(typenumber[1][i])):
+            line[xuhao2].append(typenumber[0][i])
+            xuhao2 = xuhao2 + 1
+    if len(line)<3:
+        continue
+#-------------------------------------------duplicate grain cell----------------------------------------------------------#
+    KuoDaBeiShu = 27
+    pos = []
+    for i in range(len(line) * 27):
+        pos.append([])
+        # duplicate position sites
+        for j in range(3):
+            i1 = i
+            if i >= len(line):
+                i1 = i % len(line)
+            pos[i].append(float(line[i1][j]))
+    
+
+    iii = 0
+    for i in [0, 1,2]:
+        for o in [0, 1,2]:
+            for p in [0, 1,2]:
+                for oo in range(len(line)):
+                    pos[len(line) * iii + oo][0] = (pos[len(line) * iii + oo][0] + i) / 3.0
+                    pos[len(line) * iii + oo][1] = (pos[len(line) * iii + oo][1] + o) / 3.0
+                    pos[len(line) * iii + oo][2] = (pos[len(line) * iii + oo][2] + p) / 3.0
+                iii = 1 + iii
+#-------------------------------------------duplicate grain cell----------------------------------------------------------#
+#-------------------------------------------getting real position at real xyz----------------------------------------------------------#
+    position = pos
+    posreal = []
+    for i in range(len(pos)):  #
+        xreal = pos[i][0] * x1 * magnification + pos[i][1] * y1 * magnification + pos[i][2] * z1 * magnification
+        yreal = pos[i][0] * x2 * magnification + pos[i][1] * y2 * magnification + pos[i][2] * z2 * magnification
+        zreal = pos[i][0] * x3 * magnification + pos[i][1] * y3 * magnification + pos[i][2] * z3 * magnification
+        posreal.append([xreal, yreal, zreal])
+    xuhao3 = 0
+    CoordinateMat = np.mat([[x1 * magnification, x2 * magnification, x3 * magnification],
+                            [y1 * magnification, y2 * magnification, y3 * magnification],
+                            [z1 * magnification, z2 * magnification, z3 * magnification]])
+    CoordinateMatni = np.linalg.inv(CoordinateMat)
+    #-------------------------------------------getting real position at real xyz----------------------------------------------------------#
+    for i in range(len(typenumber[0]) * KuoDaBeiShu):        #connect position with type of atom ,such as Ni,Fe,O
+        xuhao4 = i % len(typenumber[0])
+        for j in range(int(typenumberguodu[xuhao4])):
+            posreal[xuhao3].append(typenumber[0][xuhao4])
+            xuhao3 = xuhao3 + 1
+    xuhao6=0                                    
+    for j in range(KuoDaBeiShu):                              #give every atom of the original cell a unique mark ,and the same atom of duplicated cell use the same mark
+        for i in range(len(line)):
+            posreal[xuhao6].append(i)
+            xuhao6=xuhao6+1
+    dingding=[0.5*(x1+y1+z1),0.5*(x2+y2+z2),0.5*(x3+y3+z3)]    #selet a atom cloesd to the center
+
+    print('dingding')
+    print(dingding)
+    newPos = [posreal[13*len(line)]]
+    print(newPos)
+    for i in range(len(line)):                                # modified!! limit the searching range to the center cell
+        i=13*len(line)+i                                    # modified!! limit the searching range to the center cell
+        if (posreal[i + 1][0]  -dingding[0])** 2+ (posreal[i + 1][1]-dingding[1]) ** 2 + (posreal[i + 1][2]-dingding[2]) ** 2 < (newPos[0][0]-dingding[0]) ** 2 + (newPos[0][
+            1]-dingding[1]) ** 2 + (newPos[0][2]-dingding[2]) ** 2:
+            newPos = [posreal[i + 1]]
+        origin=[float(newPos[0][0]),float(newPos[0][1]),float(newPos[0][2])]
+    hklMaxDistance = []
+    list1 = []
+  
+#-------------------------------------------the core idea of method: expand the set----------------------------------------------------------#
+    for i in newPos:
+        for j in posreal:
+            if  (j not in newPos) :
+                if abs(i[0]-j[0])<4.8 and abs(i[1]-j[1])<4.8 and abs(i[2]-j[2])<4.8  :
+                    if getDistance(i,j):
+                        newPos.append(j)
+    if not (len(posreal) * 0.2 <len(newPos) < len(posreal) * 0.5 and len(newPos) > 8 ):
+        continue
+#-------------------------------------------the core idea of method: expand the set----------------------------------------------------------#
+
+    for i in newPos:             #move the origin point to the position of the origin_atom
+        i[0]=i[0]-origin[0]
+        i[1]=i[1]-origin[1]
+        i[2]=i[2]-origin[2]
+    vectorpos=[newPos[0]]
+    for i in range(len(newPos)):
+        if i ==0 :
+            continue
+        if newPos[i][4]==newPos[0][4]:
+            vectorpos.append(newPos[i])
+    print('newpos')
+    print(newPos)
+
+    vector=[]
+    for i in range(len(vectorpos)-1):
+        vector.append([vectorpos[i+1][0]-vectorpos[0][0],vectorpos[i+1][1]-vectorpos[0][1],vectorpos[i+1][2]-vectorpos[0][2]])
+    print('VECTOR')
+    print(vector)
+    if len(vector)<3:
+        continue
+    for i in range(len(vector)-1):
+        if vector[i+1][0]*vector[0][1]-vector[i+1][1]*vector[0][0]==0 and vector[i+1][1]*vector[0][2]-vector[i+1][2]*vector[0][1]==0 and vector[i+1][0]*vector[0][2]-vector[i+1][2]*vector[0][0]==0:
+            continue
+        a = sympy.Symbol('a')         #determine the new Z axis
+        b = sympy.Symbol('b')
+        c = sympy.Symbol('c')
+        chuzhivector = sympy.solve(
+                        [a * vector[i+1][0] + b * vector[i+1][1] + c * vector[i+1][2], a * vector[0][0] + b * vector[0][1] + c * vector[0][2], a + b + c - 20], [a, b, c])
+        if  len(chuzhivector)!=3:
+            chuzhivector = sympy.solve(
+                        [a * vector[i+1][0] + b * vector[i+1][1] + c * vector[i+1][2], a * vector[0][0] + b * vector[0][1] + c * vector[0][2], a + 2*b + 3*c - 20], [a, b, c])
+        if  len(chuzhivector)!=3:
+            chuzhivector = sympy.solve(
+                        [a * vector[i+1][0] + b * vector[i+1][1] + c * vector[i+1][2], a * vector[0][0] + b * vector[0][1] + c * vector[0][2], a - 2*b + 3*c-10], [a, b, c])
+
+        if  len(chuzhivector)!=3:
+            continue
+        newx=[float(vector[0][0]),float(vector[0][1]),float(vector[0][2])]
+        newy=[float(vector[i+1][0]),float(vector[i+1][1]),float(vector[i+1][2])]
+        newz=[float(chuzhivector[a]),float(chuzhivector[b]),float(chuzhivector[c])]
+        break
+
+    if len(newz)!=3:
+        continue
+    CoordinateMat = np.mat([[float(newx[0]),float(newx[1]),float(newx[2])],[float(newy[0]),float(newy[1]),float(newy[2])],[float(newz[0]),float(newz[1]),float(newz[2])]])
+    print('COORDINATEMAT')
+    print(CoordinateMat)
+    CoordinateMatni = np.linalg.inv(CoordinateMat)
+    newposzuobiao=[]
+    for i in newPos:
+        newposzuobiao1=np.array([float(i[0]),float(i[1]),float(i[2])])
+        newposzuobiao1=np.array(newposzuobiao1*CoordinateMatni)
+        newposzuobiao.append([float(newposzuobiao1[0][0]),float(newposzuobiao1[0][1]),float(newposzuobiao1[0][2]),str(i[3])])
+    newpos2=[]
+    print('newposZUOBIAO')
+    print(newposzuobiao)
+
+    boundarypos=[]
+
+    for i in newposzuobiao:
+        if 1>i[0]>=0 and 1>i[1]>=0:
+            newpos2.append(i)
+    print('newpos2')
+    print(newpos2)
+    for i in newposzuobiao:
+        if i not in newpos2:
+            if i[0] == 1 and 1 > i[1] >= 0:
+                boundarypos.append([float(i[0]) - 1, float(i[1]), float(i[2]), str(i[3])])
+            if i[1] == 1 and 1 > i[0] >= 0:
+                boundarypos.append([float(i[0]), float(i[1]) - 1, float(i[2]), str(i[3])])
+    for i in newposzuobiao:
+        boundarypos.append([i[0]%1,i[1]%1,i[2],i[3]])
+
+    for i in boundarypos:
+        if not contain(i, newpos2):
+            newpos2.append(i)
+    print('newpos2')
+    print(newpos2)
+    zmax=newpos2[0][2]
+    zmin=newpos2[0][2]
+    for i in range(len(newpos2)-1):
+        if newpos2[i+1][2]>zmax:
+            zmax=newpos2[i+1][2]
+        if newpos2[i+1][2]<zmin:
+            zmin=newpos2[i+1][2]
+    length=(zmax-zmin)*(newz[0]**2+newz[1]**2+newz[2]**2)**0.5+20    # set the vacuum layer to 20 A
+    for i in newpos2:
+        i[2]=(i[2]*(newz[0]**2+newz[1]**2+newz[2]**2)**0.5)/length
+    newz[0]=(newz[0]/(newz[0]**2+newz[1]**2+newz[2]**2)**0.5)*length
+    newz[1]=(newz[1]/(newz[0]**2+newz[1]**2+newz[2]**2)**0.5)*length
+    newz[2]=(newz[2]/(newz[0]**2+newz[1]**2+newz[2]**2)**0.5)*length
+    
+    
+
+
+
+    if len(posreal) * 0.2 <len(newPos) < len(posreal) * 0.5 and len(newPos) > 5 :      #determine the new poscar is wether a 2D layer or not
+        newexcel.write(filename)
+        newexcel.write('\n')
+        filename1 = re.sub('test/fix_total_pengzhi', 'planb/outplandout2', filename)
+        coutfile = open(filename1, 'w')
+        coutfile.write(cryname)
+        coutfile.write('\n')
+        coutfile.write('1.0')
+        coutfile.write('\n')
+        coutfile.write(
+            str(newx[0]) + '  ' +str(newx[1] )+ '  ' + str(newx[2]) + '\n' + str(
+                newy[0]) + '  ' + str(newy[1]) + '  ' + str(
+                newy[2]) + '\n' + str(newz[0]) + '  ' + str(newz[1]) + '  ' + str(
+                newz[2]) + '\n')
+        thereAreTypes = []
+        for i in range(len(newpos2)):
+            thereAreTypes.append(newpos2[i][3])
+        newdict = {}
+        for i in thereAreTypes:
+            newdict[i] = thereAreTypes.count(i)
+        newdictlist = []
+        xuhao5 = 0
+        for i in newdict:
+            newdictlist.append([])
+            newdictlist[xuhao5].append(re.sub('\n', '', i))
+            newdictlist[xuhao5].append(newdict[i])
+            xuhao5 = xuhao5 + 1
+        newdictlist.sort()
+        for i in range(len(newdictlist)):
+            coutfile.write(newdictlist[i][0])
+            coutfile.write('   ')
+        coutfile.write('\n')
+        for i in range(len(newdictlist)):
+            coutfile.write(str(int(round(newdictlist[i][1]))))
+            coutfile.write('   ')
+        coutfile.write('\n')
+        coutfile.write('Direct')
+        coutfile.write('\n')
+        for i in range(len(newdictlist)):
+            for j in range(len(newpos2)):
+                if newdictlist[i][0] == newpos2[j][3]:
+                    coutfile.write(str(newpos2[j][0]))
+                    coutfile.write('    ')
+                    coutfile.write(str(newpos2[j][1]))
+                    coutfile.write('    ')
+                    coutfile.write(str(newpos2[j][2]))
+                    coutfile.write('\n')
+        coutfile.close()
+
+    txt.close()
+
+newexcel.close()
+
